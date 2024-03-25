@@ -1,35 +1,18 @@
-import { Body, Controller, Get, Header, HttpCode, Param, Post, Redirect, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, HttpCode, Param, Post, Put, Redirect, Req, Res } from '@nestjs/common';
 
 import { CreateHeroDto } from './dto/create-hero.dto';
-let heroes = [
-    {
-        id: 1, 
-        nama: "Aurora",
-        type: "Mage",
-        gambar:"aurora.jpg",
-    },
-    {
-        id: 2, 
-        nama: "Zilong",
-        type: "Fighter",
-        gambar:"zilong.jpg",
-    },
-    {
-        id: 3, 
-        nama: "Akai",
-        type: "Tank",
-        gambar:"ekei.jpg",
-    },
-]
+import { UpdateHeroDto } from './dto/update-hero.dto';
+import { HeroService } from './hero.service';
+
 @Controller('hero')
 export class HeroController {
+    constructor(private heroService : HeroService){}
+
     @Get()
-    @HttpCode(204)
+    @HttpCode(200)
     @Header('Cache-Control','none')
     index(@Res() response) {
-        response.json({
-            title : 'hero index'
-        })
+        response.json(this.heroService.findAll())
     }
     @Get('create')
     create(@Res({passthrough:true}) response){
@@ -38,16 +21,9 @@ export class HeroController {
     }
     @Post('store')
     store(@Req() request, @Body() createHeroDto: CreateHeroDto, @Res({passthrough:true}) response){
-        // const  {id, nama, type , gambar} = request.body
+        this.heroService.create(createHeroDto)
 
-        // heroes.push({
-        //     id,
-        //     nama,
-        //     type,
-        //     gambar
-        // })
-
-        response.status(201).json(createHeroDto)
+        response.status(201).json(this.heroService.findAll())
     }
     @Get('welcome')
     @Redirect('https://docs.nestjs.com/')
@@ -56,7 +32,29 @@ export class HeroController {
     }
     // params
     @Get('detail/:id')
-    detail(@Param('id') id:string){
-        return 'hero by ' + id;
+    detail(@Param('id') id:number){
+        const hero = this.heroService.findAll().filter((hero)=>{
+            return hero.id == id
+        })
+        return hero
+    }
+
+    @Put('update/:id')
+    update(@Param('id') id:number, @Body() updateHeroDto:UpdateHeroDto){
+        const hero = this.heroService.findAll().filter((hero)=>{
+            if(hero.id == id){
+                hero.nama = updateHeroDto.nama
+                hero.type = updateHeroDto.type
+            }
+        })
+        return this.heroService.findAll()
+    }
+
+    @Delete('destroy/:id')
+    destroy(@Param('id') id:number){
+        const hero = this.heroService.findAll().filter((hero)=>{
+            return hero.id != id
+        })
+        return hero
     }
 }
